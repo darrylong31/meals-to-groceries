@@ -83,6 +83,17 @@ summary{cursor:pointer;font-weight:600}
 .sit small{color:var(--mute);font-weight:400;font-size:.9rem;white-space:nowrap}
 .sit.done{color:var(--mute);text-decoration:line-through;font-weight:400}
 .sfoot{padding:16px 14px 48px}
+.ixr{display:grid;grid-template-columns:1fr 96px 40px 30px;gap:4px;align-items:center;padding:2px 0;border-top:1px solid var(--line);font-size:.88rem}
+.ixr.ixh{border-top:0;font-size:.68rem;color:var(--mute);line-height:1.1;padding:4px 0 2px}
+.ixr.ixh span:nth-child(3){text-align:center}
+.ixn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ixr select{margin:0;width:100%;padding:2px 4px;font-size:.8rem;height:28px}
+.ixr input[type=checkbox]{width:18px;height:18px;margin:0 auto;display:block;accent-color:var(--ok)}
+.ixr button.sm{padding:0;min-height:28px;width:28px}
+.ixr .row button.sm{width:auto;padding:3px 9px}
+@keyframes fl{from{background:color-mix(in srgb,var(--mus) 60%,transparent)}to{background:transparent}}
+.ixr.flash{animation:fl 1.8s ease-out}
+@media (prefers-reduced-motion:reduce){.ixr.flash{animation:none;background:color-mix(in srgb,var(--mus) 40%,transparent)}}
 </style>
 </head>
 <body>
@@ -113,31 +124,33 @@ summary{cursor:pointer;font-weight:600}
 
 <div id="shop" hidden></div>
 <details id="trd"><summary id="trs">Meal tracker</summary><div id="tr"></div></details>
-<details id="ixd"><summary id="ixs">All ingredients</summary><div id="ix"></div></details>
+<details id="ixd"><summary id="ixs">All ingredients</summary><input type="text" id="ixq" placeholder="Filter ingredients" aria-label="Filter ingredients"><div id="ix"></div></details>
 <p class="note" style="margin-top:24px">Saved on this device and synced live between your phones when online, including each ingredient\'s store.</p>
 <details id="bkd"><summary>Backup and restore</summary><p class="note">Copy a backup of your recipes, store choices and meal history, or paste one to restore it.</p><div class="row"><button class="sm main" id="bkcopy">Copy backup</button><span class="note" id="bkmsg"></span></div><textarea id="bkbox" placeholder="Paste a backup here to restore" aria-label="Backup text"></textarea><button class="sm" id="bkrest">Restore from pasted backup</button></details>
 <button class="sm" id="reset">Reset library</button>
-<p class="note" id="ver">Version 4</p>
+<p class="note" id="ver">Version 7</p>
 </main>
 <script src="config.js"></script>
 <script>
-var K='satpicks.v2',S={meals:[],picks:[],have:[],store:{},amt:{},f:'all',edit:null,ixo:false,log:[],bought:[]},armed=null,rnk=null,rarm=false;
+var K='satpicks.v2',S={meals:[],picks:[],have:[],store:{},amt:{},f:'all',edit:null,ixo:false,log:[],bought:[],stap:{},need:[]},armed=null,rnk=null,rarm=false;
 var SEED=[
-['Lemon Pepper Veges','f',0,'','Brussels Sprouts,300g;Asparagus,1 bunch;Broccolini,1 bunch;Lemons,1;Olive Oil,2 tbsp;Lemon Pepper Seasoning,2 tsp'],
-['Adam Ragusea Roast Chicken','f',0,'','Whole Chicken,1;Butter,50g;Garlic,4 cloves;Lemons,1;Potatoes,600g'],
-['Maggi Goreng Mamak','f',1,'','Maggi Noodles,2 packs;Eggs,2;Onion,1;Garlic,3 cloves;Chilli,2;Choy Sum,1 bunch;Kicap Manis,2 tbsp;Chilli Sauce,1 tbsp'],
-['Ravioli + Jar Sauce','f',1,'','Ravioli (Coles),625g;Jar Pasta Sauce,1 jar;Parmesan,30g'],
-['Ayam Mas Berwangi','f',0,'','Chicken Thighs,5;Sugar,1 tbsp;Soy Sauce,1 tbsp;Garlic,1/2 tbsp;Curry Leaves,2 stalks;Coriander Powder,1 tsp;Curry Powder,1/2 tbsp;Char Siu Sauce,2 tbsp;Plum Sauce,1 tbsp;Cornflour,1/2 tsp;Vegetable Oil,3 tbsp'],
-['Plum Sauce Chicken + Garlic Chips','f',0,'','Chicken Thighs,4;Plum Sauce,3 tbsp;Garlic,6 cloves;Soy Sauce,1 tbsp;Spring Onion,2;Vegetable Oil,4 tbsp'],
-['Moroccan Lamb Meatballs','f',0,'https://recipetineats.com/moroccan-lamb-meatballs/','Lamb Mince,500g;Eggs,1;Panko Breadcrumbs,1/2 cup;Onion,1/2;Garlic,3 cloves;Fresh Coriander,1 bunch;Cumin,2 tsp;Paprika,2 tsp;Cinnamon,1/2 tsp;Greek Yoghurt,200g;Fresh Mint,1 bunch;Pita Bread,4'],
-['IKEA Meatballs + Mash','f',0,'','IKEA Meatballs,500g;Lingonberry Jam,1 jar;Gravy Mix,1 pack;Potatoes,600g;Butter,30g;Milk,100ml;Frozen Peas,150g'],
-['Chilli Mussels','r',0,'','Mussels,1kg;Garlic,4 cloves;Chilli,2;White Wine,150ml;Parsley,1 bunch;Crusty Bread,1 loaf'],
-['Chicken Soup With Noodles','f',0,'','Chicken Thighs,3;Carrot,2;Celery,2 stalks;Onion,1;Garlic,3 cloves;Ginger,20g;Chicken Stock,1l;Egg Noodles,200g;Spring Onion,2'],
-['Tuna + Spoonable Pasta','f',1,'','Canned Tuna,2 cans;Macaroni,150g;Seasoning,1 tsp'],
-['Poached Salmon, Coconut Lime Sauce','f',0,'','Salmon Fillets,2;Coconut Milk,400ml;Limes,2;Ginger,20g;Garlic,2 cloves;Chilli,1;Fresh Coriander,1/2 bunch;Rice,200g'],
-['Sweet And Sour Chicken','f',0,'','Chicken Thighs,4;Capsicum,1;Onion,1;Canned Pineapple,1 can;Vinegar,3 tbsp;Sugar,3 tbsp;Tomato Sauce,3 tbsp;Cornflour,1 tbsp;Rice,200g'],
-['Peanut Chilli Oil Noodles','f',1,'','Noodles,200g;Peanuts,50g;Chilli Oil,2 tbsp;Soy Sauce,2 tbsp;Garlic,2 cloves;Spring Onion,2;Black Vinegar,1 tbsp;Sugar,1 tsp']];
-function seed(){S.meals=SEED.map(function(s,i){return{id:'m'+i,name:s[0],tag:s[1],q:!!s[2],url:s[3],ing:s[4].split(';').map(function(x){var p=x.split(',');return{n:p[0],a:p[1]||''}})}})}
+["Lemon Pepper Vegetables","f",1,"","Brussels Sprouts/Asparagus/Broccolini,;Lemons,0.5;Olive Oil,;Black Pepper,;Salt,"],
+["Adam Ragusea's Roast Chicken","f",0,"https://www.youtube.com/watch?v=G8Q3BSF9-1U","Whole Chicken,1;Butter,50g;Garlic,6 cloves;Lemons,0.5;Potatoes,2;Red Onion,1;Carrots,2;Gravy Powder,;White Wine,;Salt,;Black Pepper,;White Pepper,;Garlic Powder,"],
+["Maggi Goreng Mamak","f",0,"https://nomadette.com/maggi-goreng/","Kari (Curry) Maggi Noodles,2 packs;Eggs,2;Red Onion,1;Garlic,6 cloves;Red Chilli,2;Choy Sum,1 bunch;Kicap Manis,2 tbsp;Chilli Sauce,1 tbsp"],
+["Ravioli + Jar Sauce","f",1,"","Ravioli (Coles),1 pack;Jar Pasta Sauce,2 jars;Parmesan (Optional),30g"],
+["Ayam Mas Berwangi","f",0,"","Chicken Thighs,5;Sugar,1 tbsp;Soy Sauce,1 tbsp;Garlic,1/2 tbsp;Curry Leaves,2 stalks;Coriander Powder,1 tsp;Curry Powder,1/2 tbsp;Char Siu Sauce,2 tbsp;Plum Sauce,1 tbsp;Cornflour,1/2 tsp;Vegetable Oil,3 tbsp"],
+["Plum Sauce Chicken + Garlic Chips","f",0,"","Chicken Thighs,500g;Plum Sauce,4 tbsp;Garlic,10 cloves;Sesame Oil,0.5 tsp;Vegetable Oil,4 tbsp;Soy Sauce,1 tbsp;Shaoxing Wine,1 tbsp;Water,4 tbsp;Salt,To taste"],
+["Moroccan Lamb Meatballs","f",0,"https://recipetineats.com/moroccan-lamb-meatballs/","Lamb Mince,500g;Eggs,1;Panko Breadcrumbs,1/2 cup;Onion,1/2;Garlic,3 cloves;Fresh Coriander,1 bunch;Cumin,2 tsp;Paprika,2 tsp;Cinnamon,1/2 tsp;Greek Yoghurt,200g;Fresh Mint,1 bunch;Pita Bread,4"],
+["IKEA Meatballs + Mash","f",1,"","IKEA Meatballs,500g;Lingonberry Jam,1 jar;Gravy Mix,1 pack;Potatoes,5;Butter,30g;Milk,100ml;Frozen Peas,150g"],
+["Chilli Mussels","r",0,"","Mussels,1kg;Garlic,4 cloves;Chilli,2;White Wine,150ml;Parsley,1 bunch;Fancy Bread,1 loaf;Tomato Paste,3 tbsp"],
+["Chicken Soup With Noodles","f",0,"https://www.youtube.com/watch?v=xudhMRXvJI0","Chicken Drumsticks,800g;Carrot,2;Celery,2 stalks;Onion,1;Garlic,3 cloves;Ginger,20g;Chicken Stock,1l;Egg Noodles,200g;Spring Onion,2"],
+["Tuna + Spoonable Pasta","f",1,"","Canned Tuna,4 cans;Macaroni,250g;Various Seasonings,"],
+["Poached Salmon, Coconut Lime Sauce","f",0,"https://www.recipetineats.com/poached-salmon-in-coconut-lime-sauce/","Salmon Fillets,2;Coconut Milk,400ml;Limes,2;Ginger,20g;Garlic,2 cloves;Chilli,1;Fresh Coriander,1/2 bunch;Rice,200g"],
+["Sweet And Sour Chicken","f",0,"","Chicken Thighs,4;Capsicum,1;Onion,1;Canned Pineapple,1 can;Vinegar,3 tbsp;Sugar,3 tbsp;Tomato Sauce,3 tbsp;Cornflour,1 tbsp;Rice,200g"],
+["Peanut Chilli Oil Noodles","f",1,"","Noodles,200g;Peanuts,50g;Chilli Oil,2 tbsp;Soy Sauce,2 tbsp;Garlic,2 cloves;Spring Onion,2;Black Vinegar,1 tbsp;Sugar,1 tsp"]];
+var SEEDSTORE={"black pepper":"c","olive oil":"c","salt":"c","butter":"c","garlic powder":"c","gravy powder":"c","white pepper":"c","curry leaves":"a","char siu sauce":"a","coriander powder":"a","cornflour":"c","curry powder":"a","plum sauce":"a","soy sauce":"c","sugar":"c","vegetable oil":"c","chilli sauce":"a","kari (curry) maggi noodles":"a","kicap manis":"a","jar pasta sauce":"c","parmesan (optional)":"c","ravioli (coles)":"c","sesame oil":"a","shaoxing wine":"a","water":"c","cinnamon":"c","greek yoghurt":"c","lamb mince":"c","panko breadcrumbs":"c","pita bread":"c","lingonberry jam":"c","gravy mix":"c","ikea meatballs":"c","frozen peas":"c","milk":"c","tomato paste":"c","macaroni":"c","canned tuna":"c","various seasonings":"c"};
+var SEEDSTAP={"salt":1,"black pepper":1,"white pepper":1,"olive oil":1,"vegetable oil":1,"water":1,"sugar":1,"garlic powder":1,"cornflour":1,"various seasonings":1};
+function seed(){S.meals=SEED.map(function(s,i){return{id:'m'+i,name:s[0],tag:s[1],q:!!s[2],url:s[3],ing:s[4].split(';').map(function(x){var p=x.split(',');return{n:p[0],a:p[1]||''}})}});S.store=JSON.parse(JSON.stringify(SEEDSTORE));S.stap=JSON.parse(JSON.stringify(SEEDSTAP));S.need=[]}
 try{var raw=localStorage.getItem(K);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(!S.meals.length)seed();
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}push()}
@@ -154,8 +167,11 @@ function parseAmt(s){var m=(s||'').match(/^\s*(?:(\d+)\s+)?(\d+(?:\.\d+)?)(?:\s*
 function fmt(v,u){v=Math.round(v*100)/100;if(!u)return''+v;if(['g','kg','ml','l'].indexOf(u)>=0)return v+u;var pl=['clove','stalk','can','pack','bunch','cup','jar','loaf'].indexOf(u)>=0&&v>1;return v+' '+(pl?(u==='bunch'?'bunches':u+'s'):u)}
 function total(a){if(!a.length)return'';var p=a.map(parseAmt);if(p.some(function(x){return!x}))return a.join(' + ');var g={},o=[];p.forEach(function(x){if(!(x.u in g)){g[x.u]=0;o.push(x.u)}g[x.u]+=x.v});return o.map(function(u){return fmt(g[u],u)}).join(' + ')}
 function isVeg(n){n=n.toLowerCase();if(/frozen|canned|powder|sauce|oil|jam|dried|stock|paste|seasoning|noodle/.test(n))return false;return/lemon|lime|potato|garlic|chilli|choy|onion|curry leaves|coriander|mint|parsley|carrot|celery|ginger|capsicum|sprout|asparagus|broccol|cucumber|tomato|mushroom|spinach|cabbage|\bbeans?\b|\bpeas?\b|pineapple|basil|thyme|zucchini|eggplant|avocado|apple|banana|lettuce|rocket/.test(n)}
+function isHave(k){return S.stap[k]?S.need.indexOf(k)<0:S.have.indexOf(k)>=0}
+function inList(o){return!(S.stap[o.k]&&S.need.indexOf(o.k)<0)}
+function setHave(k,on){var st=!!S.stap[k],a=st?S.need:S.have,want=st?!on:on,i=a.indexOf(k);if(want&&i<0)a.push(k);if(!want&&i>=0)a.splice(i,1)}
 function items(){var m={};S.picks.forEach(function(id){var r=mealById(id);if(!r)return;r.ing.forEach(function(g){var n=pc(g.n);if(!n)return;var k=n.toLowerCase();var o=m[k]||(m[k]={k:k,n:n,ms:[],a:[]});if(!o.ms.some(function(x){return x.id===r.id}))o.ms.push(r);if((g.a||'').trim())o.a.push(g.a.trim())})});return Object.keys(m).map(function(k){var o=m[k];o.c=total(o.a);var e=S.amt[k];o.v=e&&e.c===o.c?e.v:o.c;return o})}
-function groups(){var it=items();var st=function(o){return S.store[o.k]||'q'};var so=function(a){return a.sort(function(x,y){return(S.have.indexOf(x.k)>=0)-(S.have.indexOf(y.k)>=0)||x.n.localeCompare(y.n)})};
+function groups(){var it=items().filter(inList);var st=function(o){return S.store[o.k]||'q'};var so=function(a){return a.sort(function(x,y){return(isHave(x.k)?1:0)-(isHave(y.k)?1:0)||x.n.localeCompare(y.n)})};
 return[['Queen Vic',[['Veg & Fruit',so(it.filter(function(o){return st(o)==='q'&&isVeg(o.n)}))],['Meat & Deli',so(it.filter(function(o){return st(o)==='q'&&!isVeg(o.n)}))]]],['Coles/Woolies',[[null,so(it.filter(function(o){return st(o)==='c'}))]]],['Asian Grocer',[[null,so(it.filter(function(o){return st(o)==='a'}))]]]]}
 /* suggestions */
 function pool(ex,wantNew,quick){return S.meals.filter(function(m){return ex.indexOf(m.id)<0&&m.tag!=='r'&&(quick?m.q:(wantNew?m.tag==='n':m.tag==='f'))})}
@@ -167,11 +183,11 @@ function slots(){var h='';for(var i=0;i<4;i++){var m=mealById(S.picks[i]);h+=m?'
 $('slots').innerHTML=h;
 var nq=0,nn=0;S.picks.forEach(function(p){var m=mealById(p);if(m&&m.q)nq++;if(m&&m.tag==='n')nn++});
 $('mix').textContent=S.picks.length?(nq?nq+' quick meal'+(nq>1?'s':''):'No quick meal yet')+'; '+nn+' new, '+(S.picks.length-nn)+' favourites.':''}
-function row(o){var hv=S.have.indexOf(o.k)>=0,s=S.store[o.k]||'q';var ms=o.ms.map(function(r){return r.url?'<a href="'+esc(href(r.url))+'" target="_blank" rel="noopener">'+esc(pc(r.name))+'</a>':esc(pc(r.name))}).join(', ');
+function row(o){var hv=isHave(o.k),s=S.store[o.k]||'q';var ms=o.ms.map(function(r){return r.url?'<a href="'+esc(href(r.url))+'" target="_blank" rel="noopener">'+esc(pc(r.name))+'</a>':esc(pc(r.name))}).join(', ');
 var cc=s==='q'?(isVeg(o.n)?' v':' m'):'';return'<div class="it'+cc+(hv?' have':'')+'"><div><label class="chk"><input type="checkbox" data-h="'+esc(o.k)+'"'+(hv?' checked':'')+'><span class="nm">'+esc(o.n)+'</span></label><small>'+(hv?'Already have. ':'')+ms+'</small></div><input type="text" class="amt" data-a="'+esc(o.k)+'" data-c="'+esc(o.c)+'" value="'+esc(o.v)+'" placeholder="Amount" aria-label="Amount of '+esc(o.n)+'"><select data-s="'+esc(o.k)+'" aria-label="Store for '+esc(o.n)+'"><option value="q"'+(s==='q'?' selected':'')+'>Queen Vic</option><option value="c"'+(s==='c'?' selected':'')+'>Coles/Woolies</option><option value="a"'+(s==='a'?' selected':'')+'>Asian Grocer</option></select></div>'}
 function list(){if(!S.picks.length){$('list').innerHTML='<p class="note">Pick four recipes above and your market list appears here.</p>';return}
 var h='<p class="note">Amounts fill in from each recipe. Edit them if you already have some; the recipes stay unchanged. Tick anything you already have at home.</p>';
-groups().forEach(function(g){if(!g[1].some(function(s){return s[1].length}))return;h+='<div class="sec"><h3>'+g[0]+'</h3>';g[1].forEach(function(s){if(!s[1].length)return;if(s[0])h+='<h4 class="'+(s[0].charAt(0)==='V'?'veg':'meat')+'">'+s[0]+'</h4>';s[1].forEach(function(o){h+=row(o)})});h+='</div>'});$('list').innerHTML=h}
+groups().forEach(function(g){if(!g[1].some(function(s){return s[1].length}))return;h+='<div class="sec"><h3>'+g[0]+'</h3>';g[1].forEach(function(s){if(!s[1].length)return;if(s[0])h+='<h4 class="'+(s[0].charAt(0)==='V'?'veg':'meat')+'">'+s[0]+'</h4>';s[1].forEach(function(o){h+=row(o)})});h+='</div>'});var sx=items().filter(function(o){return!inList(o)});if(sx.length)h+='<details id="stl" style="margin-top:8px"'+(stOpen?' open':'')+'><summary>Usually have ('+sx.length+')</summary>'+sx.map(function(o){return'<div class="ix"><div><b>'+esc(o.n)+'</b><small>'+esc(o.v)+'</small></div><button class="sm" data-nd="'+esc(o.k)+'">Need this week</button></div>'}).join('')+'</details>';$('list').innerHTML=h}
 function editor(m){var h='<div class="ed" data-id="'+m.id+'"><input type="text" data-e="name" value="'+esc(m.name)+'" aria-label="Recipe name"><div class="row"><select data-e="tag" aria-label="Recipe type" style="width:auto"><option value="f"'+(m.tag==='f'?' selected':'')+'>Favourite</option><option value="n"'+(m.tag==='n'?' selected':'')+'>To try</option><option value="r"'+(m.tag==='r'?' selected':'')+'>Rare treat</option></select><label class="row note"><input type="checkbox" data-e="q"'+(m.q?' checked':'')+'> Under 15 minutes</label></div><input type="text" data-e="url" value="'+esc(m.url||'')+'" placeholder="Recipe link (optional)" aria-label="Recipe link"><p class="note" style="margin:8px 0 2px">Ingredients and amounts for one cook of this recipe</p>';
 m.ing.forEach(function(g,i){h+='<div class="ir"><input type="text" data-e="in" data-i="'+i+'" value="'+esc(g.n)+'" placeholder="Ingredient" aria-label="Ingredient"><input type="text" data-e="ia" data-i="'+i+'" value="'+esc(g.a)+'" placeholder="Amount" aria-label="Amount"><button class="sm" data-ix="'+i+'" aria-label="Remove ingredient">✕</button></div>'});
 return h+'<div class="row" style="margin-top:8px"><button class="sm" data-ai="1">Add ingredient</button><button class="sm main" data-done="1">Done</button></div></div>'}
@@ -179,19 +195,25 @@ function lib(){var ms=S.meals.filter(function(m){return S.f==='all'||(S.f==='q'?
 $('lib').innerHTML=ms.map(function(m){var on=S.picks.indexOf(m.id)>=0;return'<div class="meal'+(on?' on':'')+'"><div class="mh"><div><b>'+esc(pc(m.name))+'</b> '+tags(m)+lnk(m)+'</div><div class="row"><button class="sm'+(on?'':' main')+'" data-t="'+m.id+'">'+(on?'Remove':'Add')+'</button><button class="sm" data-ed="'+m.id+'">'+(S.edit===m.id?'Close':'Edit')+'</button><button class="sm" data-d="'+m.id+'" aria-label="Delete '+esc(m.name)+'">'+(armed===m.id?'Sure?':'Delete')+'</button></div></div>'+(S.edit===m.id?editor(m):'')+'</div>'}).join('')||'<p class="note">Nothing here yet.</p>';
 var fl=[['all','All'],['q','Under 15 min'],['f','Favourites'],['n','To try']];
 $('filters').innerHTML=fl.map(function(f){return'<button class="sm'+(S.f===f[0]?' main':'')+'" data-f="'+f[0]+'">'+f[1]+'</button>'}).join('')}
-function index(){var m={};S.meals.forEach(function(r){r.ing.forEach(function(g){var n=pc(g.n);if(!n)return;var k=n.toLowerCase();var o=m[k]||(m[k]={n:n,r:[]});if(o.r.indexOf(pc(r.name))<0)o.r.push(pc(r.name))})});var ks=Object.keys(m).sort();
-$('ixs').textContent='All ingredients ('+ks.length+')';$('ixd').open=S.ixo;
-$('ix').innerHTML=ks.map(function(k){return'<div class="ix"><div><b>'+esc(m[k].n)+'</b><small>'+esc(m[k].r.join(', '))+'</small></div>'+(rnk===k?'<div class="row"><input type="text" data-rni="1" value="'+esc(m[k].n)+'" aria-label="New name" style="width:130px;margin:0"><button class="sm main" data-rns="'+esc(k)+'">Save</button></div>':'<button class="sm" data-rn="'+esc(k)+'">Rename</button>')+'</div>'}).join('')}
+var SUGG=Object.keys(SEEDSTAP);
+function catMap(){var m={};S.meals.forEach(function(r){r.ing.forEach(function(g){var n=pc(g.n);if(!n)return;var k=n.toLowerCase();var o=m[k]||(m[k]={n:n,c:0});o.c++})});return m}
+function index(){var m=catMap(),ks=Object.keys(m).sort();$('ixs').textContent='All ingredients ('+ks.length+')';$('ixd').open=S.ixo;
+var vis=ks.filter(function(k){return!ixq||k.indexOf(ixq)>=0});
+var sel=function(k){var s=S.store[k]||'q';return'<select data-cs="'+esc(k)+'" aria-label="Default store for '+esc(m[k].n)+'"><option value="q"'+(s==='q'?' selected':'')+'>Queen Vic</option><option value="c"'+(s==='c'?' selected':'')+'>Coles/Woolies</option><option value="a"'+(s==='a'?' selected':'')+'>Asian Grocer</option></select>'};
+var h='<div class="row" style="margin:4px 0"><button class="sm'+(sugMsg?'':' main')+'" data-sugg="1">'+(sugMsg?'\u2713 Done':'Mark suggested staples')+'</button><span class="note" role="status">'+esc(sugMsg)+'</span></div><div class="ixr ixh"><span>Ingredient</span><span>Store</span><span>Usually<br>have</span><span></span></div>';
+h+=vis.map(function(k){if(rnk===k)return'<div class="ixr"><div class="row" style="grid-column:1/-1"><input type="text" data-rni="1" value="'+esc(m[k].n)+'" aria-label="New name" style="width:150px;margin:0"><button class="sm main" data-rns="'+esc(k)+'">Save</button><button class="sm" data-rnc="1">Cancel</button></div></div>';
+return'<div class="ixr'+(flash[k]?' flash':'')+'"><span class="ixn">'+esc(m[k].n)+' <span class="note">'+m[k].c+(m[k].c>1?' Recipes':' Recipe')+'</span></span>'+sel(k)+'<input type="checkbox" data-cu="'+esc(k)+'"'+(S.stap[k]?' checked':'')+' aria-label="Usually have '+esc(m[k].n)+'"><button class="sm" data-rn="'+esc(k)+'" aria-label="Rename '+esc(m[k].n)+'">\u270e</button></div>'}).join('')||'<p class="note">No match.</p>';
+$('ix').innerHTML=h}
 function renderAll(){$('date').textContent='Week of '+new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});slots();list();lib();index();tracker();shop()}
 function tracker(){var c={},l={};S.log.forEach(function(e){e.m.forEach(function(n){c[n]=(c[n]||0)+1;l[n]=e.t})});var ks=Object.keys(c).sort(function(a,b){return c[b]-c[a]||a.localeCompare(b)});$('trs').textContent='Meal tracker ('+S.log.length+' logged)';$('tr').innerHTML=ks.length?ks.map(function(n){return'<div class="ix"><div><b>'+esc(n)+'</b><small>Last: '+new Date(l[n]).toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</small></div><b>×'+c[n]+'</b></div>'}).join('')+'<div style="margin-top:8px"><button class="sm" data-undo="1">Undo last log</button></div>':'<p class="note">Nothing logged yet. Each Copy for Discord press with tracking ticked adds one to each of the four meals.</p>'}
 function logMeals(){if(!$('trk').checked||!S.picks.length)return;S.log.push({t:Date.now(),m:S.picks.map(function(p){return pc(mealById(p).name)})});save();tracker()}
-var shopOn=false,trOpen=false;
+var shopOn=false,trOpen=false,stOpen=false,ixq='',sugMsg='',flash={};
 function lsave(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 function shop(){var el=$('shop');el.hidden=!shopOn;if(!shopOn)return;
 var bo=S.bought||[],left=0,h='';
-groups().forEach(function(gr){var any=false,hh='';gr[1].forEach(function(s){var a=s[1].filter(function(o){return S.have.indexOf(o.k)<0&&bo.indexOf(o.k)<0});if(!a.length)return;any=true;left+=a.length;hh+=(s[0]?'<div class="sg2 '+(s[0].charAt(0)==='V'?'veg':'meat')+'">'+s[0]+'</div>':'')+a.map(function(o){return'<button class="sit'+(gr[0]==='Queen Vic'?(isVeg(o.n)?' v':' m'):'')+'" data-b="'+esc(o.k)+'"><span>'+esc(o.n)+'</span><small>'+esc(o.v)+'</small></button>'}).join('')});if(any)h+='<div class="sg">'+gr[0]+'</div>'+hh});
-var dn=items().filter(function(o){return S.have.indexOf(o.k)<0&&bo.indexOf(o.k)>=0});
-var all=items().length;
+groups().forEach(function(gr){var any=false,hh='';gr[1].forEach(function(s){var a=s[1].filter(function(o){return!isHave(o.k)&&bo.indexOf(o.k)<0});if(!a.length)return;any=true;left+=a.length;hh+=(s[0]?'<div class="sg2 '+(s[0].charAt(0)==='V'?'veg':'meat')+'">'+s[0]+'</div>':'')+a.map(function(o){return'<button class="sit'+(gr[0]==='Queen Vic'?(isVeg(o.n)?' v':' m'):'')+'" data-b="'+esc(o.k)+'"><span>'+esc(o.n)+'</span><small>'+esc(o.v)+'</small></button>'}).join('')});if(any)h+='<div class="sg">'+gr[0]+'</div>'+hh});
+var dn=items().filter(function(o){return inList(o)&&!isHave(o.k)&&bo.indexOf(o.k)>=0});
+var all=items().filter(inList).length;
 var body=!S.picks.length?'<p class="note" style="padding:16px 14px">No meals picked yet. Go back and pick your four.</p>':(left?h:(all?'<p style="padding:24px 14px;font-weight:700">Everything is in the trolley.</p>':''));
 if(dn.length)body+='<details id="trl" style="margin:16px 14px"'+(trOpen?' open':'')+'><summary>In the trolley ('+dn.length+')</summary>'+dn.map(function(o){return'<button class="sit done" data-ub="'+esc(o.k)+'"><span>'+esc(o.n)+'</span><small>Undo</small></button>'}).join('')+'</details>';
 el.innerHTML='<div class="sbar"><button class="sm" data-sx="1">\u2190 Planner</button><b>'+left+' left</b></div>'+body+'<div class="sfoot"><button class="main" data-sf="1">Finish shopping</button></div>'}
@@ -199,7 +221,7 @@ function bkey(k){return k.replace(/[.$#\[\]\/]/g,'_')}
 function bsurl(k){return CFG.dbUrl.replace(/\/$/,'')+'/households/'+encodeURIComponent(HH)+'/bought'+(k?'/'+encodeURIComponent(bkey(k)):'')+'.json'}
 function bput(k,on){if(!SYNC.on)return;fetch(bsurl(k),on?{method:'PUT',body:JSON.stringify(k)}:{method:'DELETE'}).then(function(r){if(!r.ok)throw 0;status('Synced')}).catch(function(){status('Offline')})}
 function clearBought(){S.bought=[];lsave();if(SYNC.on)fetch(bsurl(),{method:'DELETE'}).catch(function(){})}
-document.addEventListener('toggle',function(e){if(e.target.id==='trl')trOpen=e.target.open},true);
+document.addEventListener('toggle',function(e){if(e.target.id==='trl')trOpen=e.target.open;if(e.target.id==='stl')stOpen=e.target.open},true);
 /* events */
 document.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var d=b.dataset,ed=b.closest('.ed'),mm=ed?mealById(ed.dataset.id):null;
 if(d.r!==undefined)reroll(+d.r);
@@ -213,8 +235,11 @@ else if(d.ai&&mm){mm.ing.push({n:'',a:''});save();lib()}
 else if(d.ix!==undefined&&mm){mm.ing.splice(+d.ix,1);save();lib();list();index()}
 else if(d.nm){var id='m'+Date.now();S.meals.push({id:id,name:'New Recipe',tag:'f',q:false,url:'',ing:[{n:'',a:''}]});S.edit=id;S.f='all';save();lib();index()}
 else if(d.rn){rnk=d.rn;index()}
-else if(d.rns){var nv=pc(b.parentNode.querySelector('input').value);var ok=d.rns;if(nv){S.meals.forEach(function(r){r.ing.forEach(function(g){if(pc(g.n).toLowerCase()===ok)g.n=nv})});if(S.store[ok]){S.store[nv.toLowerCase()]=S.store[ok];delete S.store[ok]}}rnk=null;save();renderAll()}
+else if(d.rns){var nv=pc(b.parentNode.querySelector('input').value);var ok=d.rns;if(nv){S.meals.forEach(function(r){r.ing.forEach(function(g){if(pc(g.n).toLowerCase()===ok)g.n=nv})});if(S.store[ok]){S.store[nv.toLowerCase()]=S.store[ok];delete S.store[ok]}if(S.stap[ok]){S.stap[nv.toLowerCase()]=1;delete S.stap[ok]}}rnk=null;save();renderAll()}
 else if(d.undo){S.log.pop();save();tracker()}
+else if(d.rnc){rnk=null;index()}
+else if(d.nd){setHave(d.nd,false);save();list()}
+else if(d.sugg){var ck=catMap(),nw=0,al=0;flash={};SUGG.forEach(function(k){if(ck[k]){if(S.stap[k])al++;else{S.stap[k]=1;nw++;flash[k]=1}}});save();sugMsg=nw?('Marked '+nw+' new staple'+(nw>1?'s':'')+(al?' ('+al+' already set).':'.')):(al?'All '+al+' suggested staples were already marked.':'None of the suggested staples are in your recipes.');renderAll();setTimeout(function(){sugMsg='';flash={};index()},4000)}
 else if(d.ss){logMeals();shopOn=true;shop();$('shop').scrollTop=0}
 else if(d.sx){shopOn=false;shop()}
 else if(d.b){if(S.bought.indexOf(d.b)<0)S.bought.push(d.b);lsave();bput(d.b,true);shop()}
@@ -224,24 +249,27 @@ document.addEventListener('input',function(e){var t=e.target,k=t.dataset;
 if(k.e){var ed=t.closest('.ed'),m=ed&&mealById(ed.dataset.id);if(!m)return;var v=t.type==='checkbox'?t.checked:t.value;
 if(k.e==='name')m.name=v;else if(k.e==='tag')m.tag=v;else if(k.e==='q')m.q=v;else if(k.e==='url')m.url=v;else if(k.e==='in')m.ing[+k.i].n=v;else if(k.e==='ia')m.ing[+k.i].a=v;
 save();slots();list();index()}
-else if(k.a){S.amt[k.a]={c:k.c,v:t.value};save()}});
+else if(k.a){S.amt[k.a]={c:k.c,v:t.value};save()}
+else if(t.id==='ixq'){ixq=t.value.toLowerCase();index()}});
 document.addEventListener('change',function(e){var t=e.target,k=t.dataset;
-if(k.h){var i=S.have.indexOf(k.h);if(t.checked&&i<0)S.have.push(k.h);if(!t.checked&&i>=0)S.have.splice(i,1);save();list()}
+if(k.h){setHave(k.h,t.checked);save();list()}
+else if(k.cs){if(t.value==='q')delete S.store[k.cs];else S.store[k.cs]=t.value;save();list();shop()}
+else if(k.cu){if(t.checked)S.stap[k.cu]=1;else delete S.stap[k.cu];save();list();shop()}
 else if(k.s){if(t.value==='q')delete S.store[k.s];else S.store[k.s]=t.value;save();list()}
 else if(k.e)lib()});
 document.addEventListener('toggle',function(e){if(e.target.id==='ixd'){S.ixo=e.target.open;save()}},true);
 $('suggest').onclick=suggest;
-$('clear').onclick=function(){S.picks=[];S.have=[];S.amt={};clearBought();save();renderAll()};
-$('reset').onclick=function(){if(rarm){rarm=false;var lg=S.log;seed();S.picks=[];S.have=[];S.amt={};S.store={};S.edit=null;S.log=lg;save();$('reset').textContent='Reset library';renderAll()}else{rarm=true;$('reset').textContent='Tap again to reset recipes and stores';setTimeout(function(){rarm=false;$('reset').textContent='Reset library'},4000)}};
+$('clear').onclick=function(){S.picks=[];S.have=[];S.need=[];S.amt={};clearBought();save();renderAll()};
+$('reset').onclick=function(){if(rarm){rarm=false;var lg=S.log;seed();S.picks=[];S.have=[];S.amt={};S.edit=null;S.log=lg;save();$('reset').textContent='Reset library';renderAll()}else{rarm=true;$('reset').textContent='Tap again to reset recipes and stores';setTimeout(function(){rarm=false;$('reset').textContent='Reset library'},4000)}};
 $('copy').onclick=function(){if(!S.picks.length){$('copied').textContent='Pick recipes first.';return}
 var t='**Meals**\n'+S.picks.map(function(p){return'- '+pc(mealById(p).name)}).join('\n')+'\n\n**Market List**\n';
-groups().forEach(function(g){var any=g[1].some(function(s){return s[1].filter(function(o){return S.have.indexOf(o.k)<0}).length});if(!any)return;t+='\n**'+g[0]+'**\n';g[1].forEach(function(s){var a=s[1].filter(function(o){return S.have.indexOf(o.k)<0});if(!a.length)return;if(s[0])t+='*'+s[0]+'*\n';a.forEach(function(o){t+='- '+o.n+(o.v?': '+o.v:'')+'\n'})})});
+groups().forEach(function(g){var any=g[1].some(function(s){return s[1].filter(function(o){return!isHave(o.k)}).length});if(!any)return;t+='\n**'+g[0]+'**\n';g[1].forEach(function(s){var a=s[1].filter(function(o){return!isHave(o.k)});if(!a.length)return;if(s[0])t+='*'+s[0]+'*\n';a.forEach(function(o){t+='- '+o.n+(o.v?': '+o.v:'')+'\n'})})});
 var o=$('out');o.value=t.trim();logMeals();
 function done(){$('copied').textContent='Copied.'+($('trk').checked?' Logged.':' Not tracked.')}
 function fb(){o.style.display='block';o.select();try{document.execCommand('copy');done()}catch(e){$('copied').textContent='Select the text below and copy it.'}}
 if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(o.value).then(done,fb);else fb()};
 /* live sync (Firebase Realtime Database over REST) */
-var CFG=window.PLANNER_CONFIG||{},HH=null,SYNC={on:false,last:'',timer:null,hold:null,dirty:false},SHARED=['meals','picks','have','store','amt','log'];
+var CFG=window.PLANNER_CONFIG||{},HH=null,SYNC={on:false,last:'',timer:null,hold:null,dirty:false},SHARED=['meals','picks','have','store','amt','log','stap','need'];
 try{if(location.hash.length>8){localStorage.setItem('planner.hh',decodeURIComponent(location.hash.slice(1)));history.replaceState(null,'',location.pathname+location.search)}HH=localStorage.getItem('planner.hh')}catch(e){}
 function surl(){return CFG.dbUrl.replace(/\/$/,'')+'/households/'+encodeURIComponent(HH)+'.json'}
 function status(t){var el=$('sync');if(el)el.textContent=t}
@@ -257,9 +285,9 @@ if(!HH){status('Local only (open your private link once)');return}
 SYNC.on=true;pull().then(listen)}
 document.addEventListener('focusout',function(){setTimeout(function(){if(SYNC.hold&&!typing()){var h=SYNC.hold;SYNC.hold=null;apply(h)}},60)});
 window.addEventListener('online',function(){if(!SYNC.on)return;if(SYNC.dirty){SYNC.last='';push()}else pull()});
-$('bkcopy').onclick=function(){var t=JSON.stringify({meals:S.meals,store:S.store,log:S.log},null,1),b=$('bkbox');b.value=t;function ok(){$('bkmsg').textContent='Copied.'}function fb(){b.select();try{document.execCommand('copy');ok()}catch(e){$('bkmsg').textContent='Select the text below and copy it.'}}if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()};
+$('bkcopy').onclick=function(){var t=JSON.stringify({meals:S.meals,store:S.store,stap:S.stap,log:S.log},null,1),b=$('bkbox');b.value=t;function ok(){$('bkmsg').textContent='Copied.'}function fb(){b.select();try{document.execCommand('copy');ok()}catch(e){$('bkmsg').textContent='Select the text below and copy it.'}}if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()};
 var bkArm=false;
-$('bkrest').onclick=function(){var b=$('bkbox');if(!bkArm){bkArm=true;$('bkrest').textContent='Tap again to replace everything';setTimeout(function(){bkArm=false;$('bkrest').textContent='Restore from pasted backup'},4000);return}bkArm=false;$('bkrest').textContent='Restore from pasted backup';try{var o=JSON.parse(b.value);if(!o.meals||!o.meals.length)throw 0;S.meals=o.meals;S.store=o.store||{};S.log=o.log||[];S.picks=[];S.have=[];S.amt={};save();renderAll();$('bkmsg').textContent='Restored.'}catch(e){$('bkmsg').textContent='That backup could not be read.'}};
+$('bkrest').onclick=function(){var b=$('bkbox');if(!bkArm){bkArm=true;$('bkrest').textContent='Tap again to replace everything';setTimeout(function(){bkArm=false;$('bkrest').textContent='Restore from pasted backup'},4000);return}bkArm=false;$('bkrest').textContent='Restore from pasted backup';try{var o=JSON.parse(b.value);if(!o.meals||!o.meals.length)throw 0;S.meals=o.meals;S.store=o.store||{};S.stap=o.stap||{};S.need=[];S.log=o.log||[];S.picks=[];S.have=[];S.amt={};save();renderAll();$('bkmsg').textContent='Restored.'}catch(e){$('bkmsg').textContent='That backup could not be read.'}};
 renderAll();start();
 </script>
 </body>
