@@ -9,7 +9,6 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#eef1e4;--card:#fbfcf6;--ink:#1d2a20;--mute:#5d6b5f;--line:#cdd5bf;--beet:#9a2a4b;--beet-ink:#fff;--mus:#e4b035;--ok:#2f6b3f;--lk:#9a2a4b;--veg:#3f8f4f;--meat:#c0483f;
@@ -73,6 +72,17 @@ summary{cursor:pointer;font-weight:600}
 .ix{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
 .ix small{display:block;color:var(--mute)}
 .note{color:var(--mute);font-size:.85rem}
+#shop{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#shop[hidden]{display:none}
+.sbar{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-bottom:1.5px solid var(--line)}
+.sg{padding:16px 14px 4px;font-weight:800;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.sg2{padding:6px 14px 2px;font-weight:700;font-size:.8rem}
+.sg2.veg{color:var(--veg)}.sg2.meat{color:var(--meat)}
+.sit{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;min-height:56px;padding:12px 14px;border:0;border-bottom:1px solid var(--line);border-left:5px solid transparent;border-radius:0;background:var(--card);color:var(--ink);font-size:1.1rem;font-weight:600}
+.sit.v{border-left-color:var(--veg)}.sit.m{border-left-color:var(--meat)}
+.sit small{color:var(--mute);font-weight:400;font-size:.9rem;white-space:nowrap}
+.sit.done{color:var(--mute);text-decoration:line-through;font-weight:400}
+.sfoot{padding:16px 14px 48px}
 </style>
 </head>
 <body>
@@ -91,7 +101,8 @@ summary{cursor:pointer;font-weight:600}
 <h2>Market List</h2>
 <div id="list"></div>
 <div class="row" style="margin-top:12px">
-<button class="main" id="copy">Copy for Discord</button>
+<button class="main" data-ss="1">Start shopping</button>
+<button id="copy">Copy for Discord</button>
 <label class="row note"><input type="checkbox" id="trk" checked> Track these 4 meals?</label><span class="note" id="copied"></span>
 </div>
 <textarea id="out" readonly aria-label="Discord post text"></textarea>
@@ -100,15 +111,17 @@ summary{cursor:pointer;font-weight:600}
 <div class="row"><div class="row" id="filters"></div><button class="sm main" data-nm="1" style="margin-left:auto">New recipe</button></div>
 <div class="lib" id="lib"></div>
 
+<div id="shop" hidden></div>
 <details id="trd"><summary id="trs">Meal tracker</summary><div id="tr"></div></details>
 <details id="ixd"><summary id="ixs">All ingredients</summary><div id="ix"></div></details>
 <p class="note" style="margin-top:24px">Saved on this device and synced live between your phones when online, including each ingredient\'s store.</p>
+<details id="bkd"><summary>Backup and restore</summary><p class="note">Copy a backup of your recipes, store choices and meal history, or paste one to restore it.</p><div class="row"><button class="sm main" id="bkcopy">Copy backup</button><span class="note" id="bkmsg"></span></div><textarea id="bkbox" placeholder="Paste a backup here to restore" aria-label="Backup text"></textarea><button class="sm" id="bkrest">Restore from pasted backup</button></details>
 <button class="sm" id="reset">Reset library</button>
-<p class="note" id="ver">Version 3</p>
+<p class="note" id="ver">Version 4</p>
 </main>
 <script src="config.js"></script>
 <script>
-var K='satpicks.v2',S={meals:[],picks:[],have:[],store:{},amt:{},f:'all',edit:null,ixo:false,log:[]},armed=null,rnk=null,rarm=false;
+var K='satpicks.v2',S={meals:[],picks:[],have:[],store:{},amt:{},f:'all',edit:null,ixo:false,log:[],bought:[]},armed=null,rnk=null,rarm=false;
 var SEED=[
 ['Lemon Pepper Veges','f',0,'','Brussels Sprouts,300g;Asparagus,1 bunch;Broccolini,1 bunch;Lemons,1;Olive Oil,2 tbsp;Lemon Pepper Seasoning,2 tsp'],
 ['Adam Ragusea Roast Chicken','f',0,'','Whole Chicken,1;Butter,50g;Garlic,4 cloves;Lemons,1;Potatoes,600g'],
@@ -147,7 +160,7 @@ return[['Queen Vic',[['Veg & Fruit',so(it.filter(function(o){return st(o)==='q'&
 /* suggestions */
 function pool(ex,wantNew,quick){return S.meals.filter(function(m){return ex.indexOf(m.id)<0&&m.tag!=='r'&&(quick?m.q:(wantNew?m.tag==='n':m.tag==='f'))})}
 function one(ex,quick){var w=Math.random()<.4;var p=pool(ex,w,quick);if(!p.length)p=pool(ex,!w,quick);if(!p.length)p=S.meals.filter(function(m){return ex.indexOf(m.id)<0&&m.tag!=='r'});return p.length?pick(p).id:null}
-function suggest(){var ex=[],r=[];var q=one(ex,true);if(q){r.push(q);ex.push(q)}while(r.length<4){var x=one(ex,false);if(!x)break;r.push(x);ex.push(x)}S.picks=r;save();renderAll()}
+function suggest(){clearBought();var ex=[],r=[];var q=one(ex,true);if(q){r.push(q);ex.push(q)}while(r.length<4){var x=one(ex,false);if(!x)break;r.push(x);ex.push(x)}S.picks=r;save();renderAll()}
 function reroll(i){var m=mealById(S.picks[i]);var onlyQ=m&&m.q&&S.picks.filter(function(p){var x=mealById(p);return x&&x.q}).length===1;var id=one(S.picks.slice(),onlyQ);if(id){S.picks[i]=id;save();renderAll()}}
 /* render */
 function slots(){var h='';for(var i=0;i<4;i++){var m=mealById(S.picks[i]);h+=m?'<div class="slot"><div><b>'+esc(pc(m.name))+'</b>'+tags(m)+lnk(m)+'</div><div class="row"><button class="sm" data-r="'+i+'">Swap</button><button class="sm" data-x="'+i+'">Remove</button></div></div>':'<div class="slot empty">Empty slot. Tap a recipe in the library below.</div>'}
@@ -169,8 +182,24 @@ $('filters').innerHTML=fl.map(function(f){return'<button class="sm'+(S.f===f[0]?
 function index(){var m={};S.meals.forEach(function(r){r.ing.forEach(function(g){var n=pc(g.n);if(!n)return;var k=n.toLowerCase();var o=m[k]||(m[k]={n:n,r:[]});if(o.r.indexOf(pc(r.name))<0)o.r.push(pc(r.name))})});var ks=Object.keys(m).sort();
 $('ixs').textContent='All ingredients ('+ks.length+')';$('ixd').open=S.ixo;
 $('ix').innerHTML=ks.map(function(k){return'<div class="ix"><div><b>'+esc(m[k].n)+'</b><small>'+esc(m[k].r.join(', '))+'</small></div>'+(rnk===k?'<div class="row"><input type="text" data-rni="1" value="'+esc(m[k].n)+'" aria-label="New name" style="width:130px;margin:0"><button class="sm main" data-rns="'+esc(k)+'">Save</button></div>':'<button class="sm" data-rn="'+esc(k)+'">Rename</button>')+'</div>'}).join('')}
-function renderAll(){$('date').textContent='Week of '+new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});slots();list();lib();index();tracker()}
+function renderAll(){$('date').textContent='Week of '+new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});slots();list();lib();index();tracker();shop()}
 function tracker(){var c={},l={};S.log.forEach(function(e){e.m.forEach(function(n){c[n]=(c[n]||0)+1;l[n]=e.t})});var ks=Object.keys(c).sort(function(a,b){return c[b]-c[a]||a.localeCompare(b)});$('trs').textContent='Meal tracker ('+S.log.length+' logged)';$('tr').innerHTML=ks.length?ks.map(function(n){return'<div class="ix"><div><b>'+esc(n)+'</b><small>Last: '+new Date(l[n]).toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</small></div><b>×'+c[n]+'</b></div>'}).join('')+'<div style="margin-top:8px"><button class="sm" data-undo="1">Undo last log</button></div>':'<p class="note">Nothing logged yet. Each Copy for Discord press with tracking ticked adds one to each of the four meals.</p>'}
+function logMeals(){if(!$('trk').checked||!S.picks.length)return;S.log.push({t:Date.now(),m:S.picks.map(function(p){return pc(mealById(p).name)})});save();tracker()}
+var shopOn=false,trOpen=false;
+function lsave(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function shop(){var el=$('shop');el.hidden=!shopOn;if(!shopOn)return;
+var bo=S.bought||[],left=0,h='';
+groups().forEach(function(gr){var any=false,hh='';gr[1].forEach(function(s){var a=s[1].filter(function(o){return S.have.indexOf(o.k)<0&&bo.indexOf(o.k)<0});if(!a.length)return;any=true;left+=a.length;hh+=(s[0]?'<div class="sg2 '+(s[0].charAt(0)==='V'?'veg':'meat')+'">'+s[0]+'</div>':'')+a.map(function(o){return'<button class="sit'+(gr[0]==='Queen Vic'?(isVeg(o.n)?' v':' m'):'')+'" data-b="'+esc(o.k)+'"><span>'+esc(o.n)+'</span><small>'+esc(o.v)+'</small></button>'}).join('')});if(any)h+='<div class="sg">'+gr[0]+'</div>'+hh});
+var dn=items().filter(function(o){return S.have.indexOf(o.k)<0&&bo.indexOf(o.k)>=0});
+var all=items().length;
+var body=!S.picks.length?'<p class="note" style="padding:16px 14px">No meals picked yet. Go back and pick your four.</p>':(left?h:(all?'<p style="padding:24px 14px;font-weight:700">Everything is in the trolley.</p>':''));
+if(dn.length)body+='<details id="trl" style="margin:16px 14px"'+(trOpen?' open':'')+'><summary>In the trolley ('+dn.length+')</summary>'+dn.map(function(o){return'<button class="sit done" data-ub="'+esc(o.k)+'"><span>'+esc(o.n)+'</span><small>Undo</small></button>'}).join('')+'</details>';
+el.innerHTML='<div class="sbar"><button class="sm" data-sx="1">\u2190 Planner</button><b>'+left+' left</b></div>'+body+'<div class="sfoot"><button class="main" data-sf="1">Finish shopping</button></div>'}
+function bkey(k){return k.replace(/[.$#\[\]\/]/g,'_')}
+function bsurl(k){return CFG.dbUrl.replace(/\/$/,'')+'/households/'+encodeURIComponent(HH)+'/bought'+(k?'/'+encodeURIComponent(bkey(k)):'')+'.json'}
+function bput(k,on){if(!SYNC.on)return;fetch(bsurl(k),on?{method:'PUT',body:JSON.stringify(k)}:{method:'DELETE'}).then(function(r){if(!r.ok)throw 0;status('Synced')}).catch(function(){status('Offline')})}
+function clearBought(){S.bought=[];lsave();if(SYNC.on)fetch(bsurl(),{method:'DELETE'}).catch(function(){})}
+document.addEventListener('toggle',function(e){if(e.target.id==='trl')trOpen=e.target.open},true);
 /* events */
 document.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var d=b.dataset,ed=b.closest('.ed'),mm=ed?mealById(ed.dataset.id):null;
 if(d.r!==undefined)reroll(+d.r);
@@ -185,7 +214,12 @@ else if(d.ix!==undefined&&mm){mm.ing.splice(+d.ix,1);save();lib();list();index()
 else if(d.nm){var id='m'+Date.now();S.meals.push({id:id,name:'New Recipe',tag:'f',q:false,url:'',ing:[{n:'',a:''}]});S.edit=id;S.f='all';save();lib();index()}
 else if(d.rn){rnk=d.rn;index()}
 else if(d.rns){var nv=pc(b.parentNode.querySelector('input').value);var ok=d.rns;if(nv){S.meals.forEach(function(r){r.ing.forEach(function(g){if(pc(g.n).toLowerCase()===ok)g.n=nv})});if(S.store[ok]){S.store[nv.toLowerCase()]=S.store[ok];delete S.store[ok]}}rnk=null;save();renderAll()}
-else if(d.undo){S.log.pop();save();tracker()}});
+else if(d.undo){S.log.pop();save();tracker()}
+else if(d.ss){logMeals();shopOn=true;shop();$('shop').scrollTop=0}
+else if(d.sx){shopOn=false;shop()}
+else if(d.b){if(S.bought.indexOf(d.b)<0)S.bought.push(d.b);lsave();bput(d.b,true);shop()}
+else if(d.ub){S.bought=S.bought.filter(function(x){return x!==d.ub});lsave();bput(d.ub,false);shop()}
+else if(d.sf){clearBought();shopOn=false;shop()}});
 document.addEventListener('input',function(e){var t=e.target,k=t.dataset;
 if(k.e){var ed=t.closest('.ed'),m=ed&&mealById(ed.dataset.id);if(!m)return;var v=t.type==='checkbox'?t.checked:t.value;
 if(k.e==='name')m.name=v;else if(k.e==='tag')m.tag=v;else if(k.e==='q')m.q=v;else if(k.e==='url')m.url=v;else if(k.e==='in')m.ing[+k.i].n=v;else if(k.e==='ia')m.ing[+k.i].a=v;
@@ -197,12 +231,12 @@ else if(k.s){if(t.value==='q')delete S.store[k.s];else S.store[k.s]=t.value;save
 else if(k.e)lib()});
 document.addEventListener('toggle',function(e){if(e.target.id==='ixd'){S.ixo=e.target.open;save()}},true);
 $('suggest').onclick=suggest;
-$('clear').onclick=function(){S.picks=[];S.have=[];S.amt={};save();renderAll()};
+$('clear').onclick=function(){S.picks=[];S.have=[];S.amt={};clearBought();save();renderAll()};
 $('reset').onclick=function(){if(rarm){rarm=false;var lg=S.log;seed();S.picks=[];S.have=[];S.amt={};S.store={};S.edit=null;S.log=lg;save();$('reset').textContent='Reset library';renderAll()}else{rarm=true;$('reset').textContent='Tap again to reset recipes and stores';setTimeout(function(){rarm=false;$('reset').textContent='Reset library'},4000)}};
 $('copy').onclick=function(){if(!S.picks.length){$('copied').textContent='Pick recipes first.';return}
 var t='**Meals**\n'+S.picks.map(function(p){return'- '+pc(mealById(p).name)}).join('\n')+'\n\n**Market List**\n';
 groups().forEach(function(g){var any=g[1].some(function(s){return s[1].filter(function(o){return S.have.indexOf(o.k)<0}).length});if(!any)return;t+='\n**'+g[0]+'**\n';g[1].forEach(function(s){var a=s[1].filter(function(o){return S.have.indexOf(o.k)<0});if(!a.length)return;if(s[0])t+='*'+s[0]+'*\n';a.forEach(function(o){t+='- '+o.n+(o.v?': '+o.v:'')+'\n'})})});
-var o=$('out');o.value=t.trim();if($('trk').checked){S.log.push({t:Date.now(),m:S.picks.map(function(p){return pc(mealById(p).name)})});save();tracker()}
+var o=$('out');o.value=t.trim();logMeals();
 function done(){$('copied').textContent='Copied.'+($('trk').checked?' Logged.':' Not tracked.')}
 function fb(){o.style.display='block';o.select();try{document.execCommand('copy');done()}catch(e){$('copied').textContent='Select the text below and copy it.'}}
 if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(o.value).then(done,fb);else fb()};
@@ -213,9 +247,9 @@ function surl(){return CFG.dbUrl.replace(/\/$/,'')+'/households/'+encodeURICompo
 function status(t){var el=$('sync');if(el)el.textContent=t}
 function pack(){var o={};SHARED.forEach(function(k){o[k]=S[k]});return JSON.stringify(o)}
 function typing(){var a=document.activeElement;return!!a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'}
-function push(){if(!SYNC.on)return;clearTimeout(SYNC.timer);SYNC.timer=setTimeout(function(){var v=pack();if(v===SYNC.last)return;fetch(surl(),{method:'PUT',body:JSON.stringify({v:v,t:Date.now()})}).then(function(r){if(!r.ok)throw 0;SYNC.last=v;SYNC.dirty=false;status('Synced')}).catch(function(){SYNC.dirty=true;status('Offline, will sync later')})},600)}
+function push(){if(!SYNC.on)return;clearTimeout(SYNC.timer);SYNC.timer=setTimeout(function(){var v=pack();if(v===SYNC.last)return;fetch(surl(),{method:'PATCH',body:JSON.stringify({v:v,t:Date.now()})}).then(function(r){if(!r.ok)throw 0;SYNC.last=v;SYNC.dirty=false;status('Synced')}).catch(function(){SYNC.dirty=true;status('Offline, will sync later')})},600)}
 function apply(v){if(!v||v===SYNC.last)return;var o;try{o=JSON.parse(v)}catch(e){return}if(typing()){SYNC.hold=v;return}SYNC.last=v;SHARED.forEach(function(k){if(o[k]!==undefined)S[k]=o[k]});try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}renderAll()}
-function pull(){return fetch(surl()).then(function(r){return r.json()}).then(function(d){if(d&&d.v)apply(d.v);else if(!SYNC.last){push()}status('Synced')}).catch(function(){status('Offline')})}
+function pull(){return fetch(surl()).then(function(r){return r.json()}).then(function(d){if(d&&d.v)apply(d.v);else if(!SYNC.last){push()}var bo=d&&d.bought?Object.keys(d.bought).map(function(k){return d.bought[k]}):[];S.bought=bo;lsave();shop();status('Synced')}).catch(function(){status('Offline')})}
 function listen(){try{var es=new EventSource(surl());es.addEventListener('put',pull);es.addEventListener('patch',pull);es.onopen=function(){status('Synced')};es.onerror=function(){status('Reconnecting')}}catch(e){}}
 function start(){if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 if(!CFG.dbUrl||/PASTE/.test(CFG.dbUrl)){status('Local only (no database set)');return}
@@ -223,6 +257,9 @@ if(!HH){status('Local only (open your private link once)');return}
 SYNC.on=true;pull().then(listen)}
 document.addEventListener('focusout',function(){setTimeout(function(){if(SYNC.hold&&!typing()){var h=SYNC.hold;SYNC.hold=null;apply(h)}},60)});
 window.addEventListener('online',function(){if(!SYNC.on)return;if(SYNC.dirty){SYNC.last='';push()}else pull()});
+$('bkcopy').onclick=function(){var t=JSON.stringify({meals:S.meals,store:S.store,log:S.log},null,1),b=$('bkbox');b.value=t;function ok(){$('bkmsg').textContent='Copied.'}function fb(){b.select();try{document.execCommand('copy');ok()}catch(e){$('bkmsg').textContent='Select the text below and copy it.'}}if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()};
+var bkArm=false;
+$('bkrest').onclick=function(){var b=$('bkbox');if(!bkArm){bkArm=true;$('bkrest').textContent='Tap again to replace everything';setTimeout(function(){bkArm=false;$('bkrest').textContent='Restore from pasted backup'},4000);return}bkArm=false;$('bkrest').textContent='Restore from pasted backup';try{var o=JSON.parse(b.value);if(!o.meals||!o.meals.length)throw 0;S.meals=o.meals;S.store=o.store||{};S.log=o.log||[];S.picks=[];S.have=[];S.amt={};save();renderAll();$('bkmsg').textContent='Restored.'}catch(e){$('bkmsg').textContent='That backup could not be read.'}};
 renderAll();start();
 </script>
 </body>
